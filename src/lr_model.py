@@ -9,6 +9,7 @@ from sklearn.linear_model import LinearRegression, Ridge, Lasso
 from sklearn.model_selection import KFold, cross_val_score, GridSearchCV
 from sklearn.metrics import make_scorer, mean_squared_error
 from sklearn.compose import TransformedTargetRegressor
+from sklearn.impute import SimpleImputer
 
 from prepare_data import read_data, split_num_cat, FEATURES
 
@@ -27,11 +28,13 @@ def get_preprocessor(train_df: pd.DataFrame):
     num_cols, cat_cols = split_num_cat(train_df)
 
     num_pipe = Pipeline(steps=[
+        ('imputer', SimpleImputer(strategy='median', add_indicator=True)),
         ("scaler", StandardScaler())
     ])
 
-    cat_pipe = Pipeline(steps=[
-        ("ohe", OneHotEncoder(handle_unknown="ignore", min_frequency=0.05))
+    cat_pipe = Pipeline([
+        ('imputer', SimpleImputer(strategy='constant', fill_value='missing', add_indicator=True)),
+        ('ohe', OneHotEncoder(handle_unknown='ignore', min_frequency=0.05))
     ])
 
     preprocessor = ColumnTransformer(
@@ -59,9 +62,11 @@ def evaluate_cv(pipeline, X, y, n_splits=5):
     return -scores.mean()
 
 def main():
-    train_df = pd.read_csv("../data/prep_train.csv")
+    train_df, test_df = read_data("../data/train.csv", "../data/test.csv")
+    cols = [c for c in FEATURES if c in train_df.columns and c in test_df.columns]
     X = train_df[FEATURES]
     y = train_df["SalePrice"]
+    X_test = test_df[cols]
 
     preprocessor = get_preprocessor(train_df)
 
@@ -118,6 +123,14 @@ def main():
     )
     logging.info(f"Chosen model: {model_name} with CV RMSE {best_cv_rmse:,.0f} $")
 
+    best_estimator.fit(X, y)
+    preds = best_estimator.predict(X_test)
+
+    # save
+    submit = pd.DataFrame({"Id": test_df["Id"], "SalePrice": preds})
+    out_path = f"../submissions/submission_linear_{model_name}.csv"
+    submit.to_csv(out_path, index=False)
+    logging.info(f"Saved: {out_path}")
 
 if __name__ == "__main__":
     main()

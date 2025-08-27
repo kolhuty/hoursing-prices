@@ -15,8 +15,7 @@ FEATURES = ['MSSubClass', 'MSZoning', 'LotFrontage', 'LotArea', 'Street',
        'GarageFinish', 'GarageCars', 'GarageArea', 'GarageQual', 'GarageCond',
        'PavedDrive', 'WoodDeckSF', 'OpenPorchSF', 'EnclosedPorch', '3SsnPorch',
        'ScreenPorch', 'PoolArea', 'MiscVal', 'MoSold', 'YrSold', 'SaleType',
-       'SaleCondition', 'GarageYrBlt_na', 'LotFrontage_na',
-       'MasVnrArea_na']
+       'SaleCondition']
 
 def split_num_cat(df: pd.DataFrame) -> tuple[list[str], list[str]]:
     cat_force = ["MSSubClass", "MoSold", "YrSold"]
