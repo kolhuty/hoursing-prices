@@ -15,11 +15,11 @@ FEATURES = ['MSSubClass', 'MSZoning', 'LotFrontage', 'LotArea', 'Street',
        'GarageFinish', 'GarageCars', 'GarageArea', 'GarageQual', 'GarageCond',
        'PavedDrive', 'WoodDeckSF', 'OpenPorchSF', 'EnclosedPorch', '3SsnPorch',
        'ScreenPorch', 'PoolArea', 'MiscVal', 'MoSold', 'YrSold', 'SaleType',
-       'SaleCondition', 'SalePrice', 'GarageYrBlt_na', 'LotFrontage_na',
+       'SaleCondition', 'GarageYrBlt_na', 'LotFrontage_na',
        'MasVnrArea_na']
 
-def split_num_cat(df: pd.DataFrame, list: FEATURES) -> tuple[list[str], list[str]]:
-    cat_force = ["MSSubClass", "MoSold"]
+def split_num_cat(df: pd.DataFrame) -> tuple[list[str], list[str]]:
+    cat_force = ["MSSubClass", "MoSold", "YrSold"]
     cat_cols = [c for c in FEATURES if df[c].dtype == "object"]
     for c in cat_force:
         if c in FEATURES and c not in cat_cols:
