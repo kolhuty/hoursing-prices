@@ -60,7 +60,6 @@ def evaluate_cv(pipeline, X, y, n_splits=5):
 
 def main():
     train_df = pd.read_csv("../data/prep_train.csv")
-
     X = train_df[FEATURES]
     y = train_df["SalePrice"]
 
@@ -68,9 +67,57 @@ def main():
 
     # base lr
     lr = make_model(LinearRegression(n_jobs=-1))
-    pipe_lr = Pipeline(steps=[("pre", preprocessor), ("model", lr)])
-    rmse_lr = evaluate_cv(pipe_lr, X, y)
+    pipe_base = Pipeline(steps=[("pre", preprocessor), ("model", lr)])
+    rmse_lr = evaluate_cv(pipe_base, X, y)
     logging.info(f"Baseline CV RMSE: {rmse_lr:,.0f} $")
+
+    # ridge
+    ridge = make_model(Ridge(random_state=RANDOM_STATE, max_iter=5000))
+    pipe_ridge = Pipeline(steps=[("pre", preprocessor), ("model", ridge)])
+    param_grid_ridge = {
+        "model__regressor__alpha": [0.01, 0.1, 0.3, 1.0, 3.0, 10.0, 30.0]
+    }
+    gs_ridge = GridSearchCV(
+        estimator=pipe_ridge,
+        param_grid=param_grid_ridge,
+        scoring=make_scorer(rmse, greater_is_better=False),
+        cv=KFold(n_splits=5, shuffle=True, random_state=RANDOM_STATE),
+        n_jobs=-1
+    )
+    gs_ridge.fit(X, y)
+    best_ridge_rmse = -gs_ridge.best_score_
+    best_ridge_alpha = gs_ridge.best_params_["model__regressor__alpha"]
+    logging.info(f"Ridge: Best alpha={best_ridge_alpha}, CV RMSE: {best_ridge_rmse:,.0f} $")
+
+    # lasso
+    lasso = make_model(Lasso(random_state=RANDOM_STATE, max_iter=10000))
+    pipe_lasso = Pipeline(steps=[("pre", preprocessor), ("model", lasso)])
+    param_grid_lasso = {
+        "model__regressor__alpha": [0.001, 0.01, 0.03, 0.1, 0.3, 1.0]
+    }
+    gs_lasso = GridSearchCV(
+        estimator=pipe_lasso,
+        param_grid=param_grid_lasso,
+        scoring=make_scorer(rmse, greater_is_better=False),
+        cv=KFold(n_splits=5, shuffle=True, random_state=RANDOM_STATE),
+        n_jobs=-1
+    )
+    gs_lasso.fit(X, y)
+    best_lasso_rmse = -gs_lasso.best_score_
+    best_lasso_alpha = gs_lasso.best_params_["model__regressor__alpha"]
+    logging.info(f"Lasso: Best alpha={best_lasso_alpha}, CV RMSE: {best_lasso_rmse:,.0f} $")
+
+    # best
+    model_name, best_estimator, best_cv_rmse = min(
+        [
+            ("base", pipe_base.fit(X, y), rmse_lr),
+            ("ridge", gs_ridge.best_estimator_, best_ridge_rmse),
+            ("lasso", gs_lasso.best_estimator_, best_lasso_rmse),
+        ],
+        key=lambda t: t[2]
+    )
+    logging.info(f"Chosen model: {model_name} with CV RMSE {best_cv_rmse:,.0f} $")
+
 
 if __name__ == "__main__":
     main()
