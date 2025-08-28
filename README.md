@@ -16,8 +16,6 @@ Exploratory Data Analysis (EDA)
 
 Реализовано несколько моделей с помощью библиотеки scikit-learn:
 
----
-
 **Линейные модели**:
 
 Baseline (Linear Regression)
