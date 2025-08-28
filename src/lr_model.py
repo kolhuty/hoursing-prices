@@ -16,7 +16,7 @@ from prepare_data import read_data, split_num_cat, FEATURES
 RANDOM_STATE = 42
 
 logging.basicConfig(
-    filename='lr_log.log',
+    filename='models_score.log',
     level=logging.INFO,
     format='%(message)s'
 )
