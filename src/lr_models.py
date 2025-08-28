@@ -53,7 +53,7 @@ def train_lr(train_df: pd.DataFrame, test_df: pd.DataFrame):
     # best
     best_model_name, best_estimator, best_cv_rmse = min(
         [
-            ("base", lr_pipe.fit(X, y), rmse_lr),
+            ("base", lr_pipe, rmse_lr),
             ("ridge", ridge_best_pipe, ridge_best_rmse),
             ("lasso", lasso_best_pipe, lasso_best_rmse),
         ],
