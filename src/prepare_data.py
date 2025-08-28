@@ -1,3 +1,4 @@
+import numpy as np
 import pandas as pd
 
 FEATURES = ['MSSubClass', 'MSZoning', 'LotFrontage', 'LotArea', 'Street',
@@ -30,3 +31,8 @@ def read_data(train_path: str, test_path: str) -> tuple[pd.DataFrame, pd.DataFra
     train = pd.read_csv(train_path)
     test = pd.read_csv(test_path)
     return train, test
+
+def save_submit(Id: pd.Series, preds: np.ndarray, model_name: str):
+    submit = pd.DataFrame({"Id": Id, "SalePrice": preds})
+    out_path = f"../submissions/submission_{model_name}.csv"
+    submit.to_csv(out_path, index=False)

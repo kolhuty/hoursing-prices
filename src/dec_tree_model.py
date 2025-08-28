@@ -11,13 +11,14 @@ from sklearn.tree import DecisionTreeRegressor
 from sklearn.compose import TransformedTargetRegressor
 from sklearn.metrics import mean_squared_error, make_scorer
 
-from prepare_data import read_data, split_num_cat, FEATURES
+import utils
+from prepare_data import read_data, save_submit, split_num_cat, FEATURES
 
 
 RANDOM_STATE = 42
 
 logging.basicConfig(
-    filename='models_score.log',
+    filename='../logs/models_score.log',
     level=logging.INFO,
     format='%(message)s'
 )
@@ -61,46 +62,30 @@ def evaluate_cv(pipeline, X, y, n_splits=5):
     scores = cross_val_score(pipeline, X, y, scoring=rmse_scorer, cv=cv, n_jobs=-1)
     return -scores.mean()
 
-def main():
-    train_df, test_df = read_data("../data/train.csv", "../data/test.csv")
+def train_dec_tree(train_df: pd.DataFrame, test_df: pd.DataFrame):
+
     cols = [c for c in FEATURES if c in train_df.columns and c in test_df.columns]
     X = train_df[FEATURES]
     y = train_df["SalePrice"]
     X_test = test_df[cols]
 
-    preprocessor = get_preprocessor(train_df)
+    preprocessor = utils.get_preprocessor(train_df, normalizing=False)
 
-    dec_tree = make_model(DecisionTreeRegressor(random_state=RANDOM_STATE))
-    pipe_dec_tree = Pipeline(steps=[("pre", preprocessor), ("model", dec_tree)])
-
-    param_grid_dec_tree = {
+    dec_tree_best_pipe, dec_tree_best_rmse, dec_tree_best_params = utils.tune_model_grid(
+        DecisionTreeRegressor(random_state=RANDOM_STATE),
+        preprocessor,
+        X, y,
+        param_grid={
         'model__regressor__max_depth': [5,7,9,12, None],
         'model__regressor__min_samples_leaf': [1,2,4,8,10]
-    }
-
-    gs_dec_tree = GridSearchCV(
-        estimator=pipe_dec_tree,
-        param_grid=param_grid_dec_tree,
-        scoring=make_scorer(rmse, greater_is_better=False),
-        cv=KFold(n_splits=5, shuffle=True, random_state=RANDOM_STATE),
-        n_jobs=-1
+        },
+        scoring=make_scorer(utils.rmse, greater_is_better=False)
     )
-    gs_dec_tree.fit(X, y)
-    best_dec_tree_rmse = -gs_dec_tree.best_score_
-    best_dec_tree_max_depth = gs_dec_tree.best_params_["model__regressor__max_depth"]
-    best_dec_tree_min_samples_leaf = gs_dec_tree.best_params_["model__regressor__min_samples_leaf"]
-    logging.info(f"Decision tree: Best decision tree max depth={best_dec_tree_max_depth}\nBest decision tree min samples leaf={best_dec_tree_min_samples_leaf}\nCV RMSE: {best_dec_tree_rmse:,.0f} $")
+    logging.info(f"Decision tree: Best decision tree max depth={dec_tree_best_params['model__regressor__max_depth']}\n"
+                 f"Best decision tree min samples leaf={dec_tree_best_params['model__regressor__min_samples_leaf']}\n"
+                 f"CV RMSE: {dec_tree_best_rmse:,.0f} $")
 
-    dec_tree_model = gs_dec_tree.best_estimator_
-    dec_tree_model.fit(X, y)
-    preds = dec_tree_model.predict(X_test)
+    dec_tree_best_pipe.fit(X, y)
+    preds = dec_tree_best_pipe.predict(X_test)
 
-    # save
-    submit = pd.DataFrame({"Id": test_df["Id"], "SalePrice": preds})
-    out_path = f"../submissions/submission_dec_tree.csv"
-    submit.to_csv(out_path, index=False)
-    logging.info(f"Saved: {out_path}")
-
-
-if __name__ == "__main__":
-    main()
+    return preds, 'Decision Tree'
