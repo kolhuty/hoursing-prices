@@ -35,7 +35,7 @@ Exploratory Data Analysis (EDA)
 ---
 
 **Результаты**  
-Метрика RMSE на тесте Kaggle
+Метрика RMSLE на тесте Kaggle
 - Lasso Regression: 0.227
 - Gradient Boosting Tree: 0.127
 
@@ -52,3 +52,5 @@ Exploratory Data Analysis (EDA)
 
 Наилучший результат показала модель Gradient Boosting  
 Среди линейных моделей лучше всего сработала Lasso Regression
+
+Датасет взят с Kaggle: https://www.kaggle.com/c/house-prices-advanced-regression-techniques
